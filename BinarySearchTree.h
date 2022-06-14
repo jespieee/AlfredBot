@@ -516,7 +516,7 @@ private:
           return;
       }
       traverse_inorder_impl(node->left, os);
-      os << node->datum;
+      os << node->datum << " ";
       traverse_inorder_impl(node->right, os);
   }
 
@@ -531,7 +531,7 @@ private:
       if (!node) {
           return;
       }
-      os << node->datum;
+      os << node->datum << " ";
       traverse_preorder_impl(node->left, os);
       traverse_preorder_impl(node->right, os);
   }
