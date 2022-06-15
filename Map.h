@@ -186,7 +186,8 @@ V& Map<K, V, C>::operator[](const K& k) {
         Pair_type insertPair;
         insertPair.first = k;
         insertPair.second = V();
-        insert(insertPair);
+        //insert(insertPair);
+        return mapTree.insert(insertPair)->second;
     }
     return returnVal->second;
 }
@@ -202,10 +203,14 @@ V& Map<K, V, C>::operator[](const K& k) {
 template <typename K, typename V, typename C>
 std::pair<typename Map<K, V, C>::Iterator, bool> Map<K, V, C>::
     insert(const Pair_type& val) {
-    bool canInsert = false;
-    pair<typename Map<K, V, C>::Iterator, bool> p1(mapTree.insert(val), canInsert);
-    if (mapTree.insert(val) == mapTree.end()) {
-        canInsert = true;
+    pair<typename Map<K, V, C>::Iterator, bool> p1;
+    if (mapTree.find(val) != mapTree.end()) {
+        p1.first = mapTree.find(val);
+        p1.second = false;
+    }
+    else if (mapTree.insert(val) == mapTree.end()) {
+        p1.first = mapTree.insert(val);
+        p1.second = true;
     }
     return p1;
 }
