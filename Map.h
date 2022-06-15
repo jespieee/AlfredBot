@@ -20,6 +20,7 @@
 #include <cassert>  //assert
 #include <utility>  //pair
 
+using namespace std;
 template <typename Key_type, typename Value_type,
           typename Key_compare=std::less<Key_type> // default argument
          >
@@ -33,6 +34,12 @@ private:
 
   // A custom comparator
   class PairComp {
+  public:
+      bool operator()(Pair_type p1, Pair_type p2) const {
+          return isLess(p1.first, p2.first);
+      }
+  private:
+      Key_compare isLess;
   };
 
 public:
@@ -113,6 +120,7 @@ public:
 
 private:
   // Add a BinarySearchTree private member HERE.
+    BinarySearchTree<Pair_type, PairComp> mapTree;
 };
 
 // You may implement member functions below using an "out-of-line" definition
@@ -129,14 +137,14 @@ private:
  // EFFECTS : Returns whether this Map is empty.
 template <typename K, typename V, typename C>
 bool Map<K, V, C>::empty() const {
-    assert(false);
+    return mapTree.empty();
 }
 
 // EFFECTS : Returns the number of elements in this Map.
 // NOTE : size_t is an integral type from the STL
 template <typename K, typename V, typename C>
 size_t Map<K, V, C>::size() const {
-    assert(false);
+    return mapTree.size();
 }
 
 // EFFECTS : Searches this Map for an element with a key equivalent
@@ -148,7 +156,11 @@ size_t Map<K, V, C>::size() const {
 //       using "Value_type()".
 template <typename K, typename V, typename C>
 typename Map<K, V, C>::Iterator Map<K, V, C>::find(const K& k) const {
-    assert(false);
+    Pair_type findPair;
+    findPair.first = k;
+    findPair.second = V();
+    return mapTree.find(findPair);
+
 }
 
 // MODIFIES: this
@@ -169,7 +181,14 @@ typename Map<K, V, C>::Iterator Map<K, V, C>::find(const K& k) const {
 // HINT: http://www.cplusplus.com/reference/map/map/operator[]/
 template <typename K, typename V, typename C>
 V& Map<K, V, C>::operator[](const K& k) {
-    assert(false);
+    auto returnVal = find(k);
+    if (returnVal == end()) {
+        Pair_type insertPair;
+        insertPair.first = k;
+        insertPair.second = V();
+        insert(insertPair);
+    }
+    return returnVal->second;
 }
 
 // MODIFIES: this
@@ -183,18 +202,23 @@ V& Map<K, V, C>::operator[](const K& k) {
 template <typename K, typename V, typename C>
 std::pair<typename Map<K, V, C>::Iterator, bool> Map<K, V, C>::
     insert(const Pair_type& val) {
-    assert(false);
+    bool canInsert = false;
+    pair<typename Map<K, V, C>::Iterator, bool> p1(mapTree.insert(val), canInsert);
+    if (mapTree.insert(val) == mapTree.end()) {
+        canInsert = true;
+    }
+    return p1;
 }
 
 // EFFECTS : Returns an iterator to the first key-value pair in this Map.
 template <typename K, typename V, typename C>
 typename Map<K, V, C>::Iterator Map<K, V, C>::begin() const {
-    assert(false);
+    return mapTree.begin();
 }
 
 // EFFECTS : Returns an iterator to "past-the-end".
 template <typename K, typename V, typename C>
 typename Map<K, V, C>::Iterator Map<K, V, C>::end() const {
-    assert(false);
+    return mapTree.end();
 }
 #endif // DO NOT REMOVE!!!
