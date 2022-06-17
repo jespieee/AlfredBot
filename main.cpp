@@ -62,24 +62,26 @@ public:
 
 	void Predict(csvstream& file) {
 		map<string, string> row;
-		set<string> bagOfVocab = unique_words(row["content"]);
-		map<double, string> Logs;
-		vector<double> logVector;
 		int guesses = 0;
 		int correctGuesses = 0;
+		double max = 0;
 		while (file >> row) {
+			set<string> bagOfVocab = unique_words(row["content"]);
+			map<double, string> Logs;
+			vector<double> logVector;
 			for (auto i = labels.begin(); i != labels.end(); ++i) {
-				double logPerLabel = calc_log_prior(i->first);
+				double logPerLabel = 0;
 				for (auto j = bagOfVocab.begin(); j != bagOfVocab.end(); ++j) {
-					logPerLabel += calc_log_likelihood(i->first, *j);
+					logPerLabel = logPerLabel + calc_log_likelihood(i->first, *j);
 				}
+				logPerLabel = logPerLabel + calc_log_prior(i->first);
 				if (Logs.find(logPerLabel) == Logs.end()) {
 					pair<double, string> p1(logPerLabel, i->first);
 					Logs.insert(p1);
-					logVector.push_back(logPerLabel);
 				}
+				logVector.push_back(logPerLabel);
 			}			
-			double max = *max_element(logVector.begin(), logVector.end());
+			max = *max_element(logVector.begin(), logVector.end());
 			string prediction = Logs[max];
 			if (prediction == row["tag"]) {
 				correctGuesses++;
@@ -111,12 +113,10 @@ public:
 		if (words.find(finder) == words.end()) {
 			return log(1 / numPosts);
 		}
-		else if (finalMap.find(p1) == finalMap.end()) {
+		if (finalMap.find(p1) == finalMap.end()) {
 			return log(numPostsW / numPosts);
 		}
-		else {
-			return log(numPostsCW / numPostsC);
-		}
+		return log(numPostsCW / numPostsC);
 	}
 
 	set<string> unique_words(const string& str) {
@@ -139,10 +139,10 @@ public:
 		map<string, string> debugRow;
 		while (file >> debugRow) {
 			if (wantDebug) {
-				numPosts++;
 				cout << "  label = " << debugRow["tag"] << ", content = "
 					<< debugRow["content"] << "\n";
 			}
+			numPosts++;
 		}
 		cout << "trained on " << numPosts << " examples\n";
 	}
@@ -219,7 +219,7 @@ public:
 				if (finalMap.find(p1) != finalMap.end()) {
 					finalMap.find(p1)->second += 1;
 				}
-				else {
+				else if (finalMap.find(p1) == finalMap.end()) {
 					pair<pair<string, string>, int> p2(p1, 1);
 					finalMap.insert(p2);
 				}
@@ -249,24 +249,41 @@ void file_error(string file) {
 }
 
 int main(int argc, char** argv) {
-	bool wantDebug;
+	bool wantDebug, successTrain;
 	ifstream file;
 	cout.precision(3);
-	string DB = argv[3];
 	string openString = argv[2];
+	string trainingFile = argv[1];
+	bool fileOpen = false;
 	if (argc != 3 && argc != 4) {
 		print_error();
 		return 1;
 	}
-	
-	else if (argc == 4 && DB != "--debug") {
-		print_error();
-		return 1;
-	}
-	else if (argc == 4 && DB != "--debug") {
-		wantDebug = true;
+	if (argc == 4) {
+		string DB = argv[3];
+		if (DB != "--debug") {
+			print_error();
+			return 1;
+		}
+		else if (DB == "--debug") {
+			wantDebug = true;
+		}		
 	}
 	PiazzaBot PiazzaBot;
 	file.open(openString);
-
+	if (file.is_open()) {
+		fileOpen = true;
+	}
+	if (!file.is_open()) {
+		file_error(openString);
+		return 1;
+	}
+	successTrain = PiazzaBot.Train(trainingFile, wantDebug, fileOpen);
+	if (!successTrain) {
+		file_error(trainingFile);
+		return 1;
+	}
+	csvstream tester(file);
+	PiazzaBot.Predict(tester);
+	return 0;
 } 
